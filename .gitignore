@@ -23,3 +23,5 @@ Thumbs.db
 # Others
 *.tmp
 *.bak
+.git
+.vs
