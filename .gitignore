@@ -1,2 +1,27 @@
+# Build
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.cache
+*.log
+
+# VS Code
+.vscode/
+
+# Test results
+TestResults/
+coverage-report/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Others
+*.tmp
+*.bak
 .git
 .vs
