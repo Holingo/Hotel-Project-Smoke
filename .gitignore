@@ -1,2 +1,32 @@
+<<<<<<< HEAD
 .git
 .vs
+=======
+# Build
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.cache
+*.log
+
+# VS Code
+.vscode/
+
+# Test results
+TestResults/
+coverage-report/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Others
+*.tmp
+*.bak
+.git
+.vs
+>>>>>>> c257b18b942e8e9aa59fb10964dee04c6ea1f70b
