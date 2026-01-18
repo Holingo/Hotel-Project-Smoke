@@ -29,4 +29,5 @@ Thumbs.db
 *.bak
 .git
 .vs
+.idea
 >>>>>>> c257b18b942e8e9aa59fb10964dee04c6ea1f70b
