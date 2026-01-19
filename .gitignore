@@ -1,0 +1,39 @@
+## --- Visual Studio ---
+.vs/
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## --- Roslyn i pliki indeksowania ---
+*.vsidx
+*.vshost.*
+*.vshost.exe.config
+*.vshost.exe.manifest
+
+## --- Systemowe / Środowisko ---
+.vscode/
+.idea/
+*.swp
+*~
+Thumbs.db
+Desktop.ini
+
+## --- Publikacja / Pakiety ---
+*.nupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/repositories.config
+**/[Pp]ublish/
+
+## --- Pliki tymczasowe ASP.NET ---
+Generated\ Files/
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+## --- Pliki logów i baz danych ---
+*.log
+*.sqlite
+*.sqlproj.user
