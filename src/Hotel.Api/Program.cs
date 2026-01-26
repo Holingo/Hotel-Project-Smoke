@@ -6,6 +6,7 @@ using Hotel.Application.Settings;
 using Hotel.Infrastructure;
 using Hotel.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -24,7 +25,37 @@ builder.Services.AddFluentValidationAutoValidation();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Hotel.Api", Version = "v1" });
+
+    // 1. Definicja przycisku Authorize
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Wpisz tutaj swój token JWT."
+    });
+
+    // 2. Wymaganie kłódki przy endpointach
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 // Infrastructure (DbContext, repositories itd.)
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -38,8 +69,6 @@ builder.Services.AddScoped<IRoomsService, RoomsService>();
 builder.Services.AddScoped<IGuestsService, GuestsService>();
 builder.Services.AddScoped<IReservationsService, ReservationsService>();
 builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
-
-var app = builder.Build();
 
 builder.Services.AddAuthentication(options =>
     {
@@ -62,6 +91,8 @@ builder.Services.AddAuthentication(options =>
     });
 
 builder.Services.AddAuthorization();
+
+var app = builder.Build();
 
 // Middleware
 app.UseMiddleware<Hotel.Api.Middleware.ExceptionHandlingMiddleware>();
