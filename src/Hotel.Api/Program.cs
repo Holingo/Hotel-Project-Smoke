@@ -3,7 +3,7 @@ using Hotel.Application.Abstractions;
 using Hotel.Application.Services;
 using Hotel.Application.Settings;
 using Hotel.Infrastructure;
-using Hotel.Infrastructure.Persistance;
+using Hotel.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,7 +26,7 @@ builder.Services.AddSwaggerGen();
 // Infrastructure (DbContext, repositories itd.)
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// DbContext → abstraction (Clean Architecture)
+// DbContext ~ Do polaczenia sie z Azure - Oskar
 builder.Services.AddScoped<IHotelDbContext>(sp =>
     sp.GetRequiredService<HotelDbContext>());
 
