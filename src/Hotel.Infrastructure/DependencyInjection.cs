@@ -9,8 +9,11 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration cfg)
     {
-        var cs = cfg.GetConnectionString("HotelDb"); //?? "Data Source=hotel.db";
-        services.AddDbContext<HotelDbContext>(opt => opt.UseSqlite(cs));
+        //var cs = cfg.GetConnectionString("HotelDb"); //?? "Data Source=hotel.db";
+        services.AddDbContext<HotelDbContext>(options =>
+            options.UseSqlServer(
+                cfg.GetConnectionString("HotelDb"),
+                b => b.MigrationsAssembly("Hotel.Infrastructure")));
         return services;
     }
 }
