@@ -1,7 +1,0 @@
-{
-  "sdk": {
-    "version": "8.0.417",
-    // Allow running with newer major SDKs installed on the machine (e.g., 9.x)
-    "rollForward": "latestFeature"
-  }
-}

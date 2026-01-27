@@ -12,24 +12,40 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Settings
-builder.Services.Configure<ReservationSettings>(
-    builder.Configuration.GetSection("Reservation"));
+// --- 1. REJESTRACJA USŁUG (Services) ---
 
-// Controllers
-builder.Services.AddControllers()
-    .AddNewtonsoftJson();
+builder.Services.AddControllers().AddNewtonsoftJson();
 
-// Validation
-builder.Services.AddFluentValidationAutoValidation();
+// Konfiguracja JWT
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+    };
+});
 
-// Swagger
+builder.Services.AddAuthorization();
+
+// Konfiguracja Swaggera z obsługą Bearer Token
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Hotel.Api", Version = "v1" });
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Hotel API", Version = "v1" });
 
-    // 1. Definicja przycisku Authorize
+    // Definicja zabezpieczeń (przycisk Authorize)
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -37,10 +53,10 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Wpisz tutaj swój token JWT."
+        Description = "Wpisz sam token JWT (bez słowa Bearer)."
     });
 
-    // 2. Wymaganie kłódki przy endpointach
+    // Wymaganie tokena dla wszystkich endpointów
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -57,55 +73,41 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Infrastructure (DbContext, repositories itd.)
+builder.Services.AddFluentValidationAutoValidation();
+
+// Infrastruktura i DI
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// DbContext ~ Do polaczenia sie z Azure - Oskar
 builder.Services.AddScoped<IHotelDbContext>(sp =>
     sp.GetRequiredService<HotelDbContext>());
 
-// Application services
 builder.Services.AddScoped<IRoomsService, RoomsService>();
 builder.Services.AddScoped<IGuestsService, GuestsService>();
 builder.Services.AddScoped<IReservationsService, ReservationsService>();
 builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
-        };
-    });
-
-builder.Services.AddAuthorization();
+// --- 2. BUDOWA APLIKACJI (Build) ---
 
 var app = builder.Build();
 
-// Middleware
+// --- 3. POTOK MIDDLEWARE (Pipeline) ---
+
 app.UseMiddleware<Hotel.Api.Middleware.ExceptionHandlingMiddleware>();
 app.UseMiddleware<Hotel.Api.Middleware.RequestLoggingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Hotel API v1");
+    });
 
     // Automatyczna migracja
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<HotelDbContext>();
+
+    // UWAGA: Jeśli Azure nadal wyrzuca błąd, zakomentuj poniższą linię, aby chociaż Swagger ruszył
     await db.Database.MigrateAsync();
 }
 
