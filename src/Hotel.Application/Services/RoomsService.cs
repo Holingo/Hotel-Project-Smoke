@@ -39,6 +39,8 @@ public sealed class RoomsService(IHotelDbContext db) : IRoomsService
         pageSize = Math.Clamp(pageSize, 1, 100);
 
         var q = db.Rooms.AsNoTracking().AsQueryable();
+
+        // 1. Filtrowanie (w bazie)
         if (minCapacity is not null) q = q.Where(r => r.Capacity >= minCapacity);
         if (onlyActive is true) q = q.Where(r => r.IsActive);
         if (!string.IsNullOrWhiteSpace(type))
@@ -49,20 +51,35 @@ public sealed class RoomsService(IHotelDbContext db) : IRoomsService
 
         var total = await q.CountAsync(ct);
 
+
+        var allFilteredRooms = await q.ToListAsync(ct);
+
+
         var dirDesc = string.Equals(sortDir, "desc", StringComparison.OrdinalIgnoreCase);
-        q = (sortBy ?? "number").Trim().ToLowerInvariant() switch
+        var sortField = (sortBy ?? "number").Trim().ToLowerInvariant();
+
+        var sorted = sortField switch
         {
-            "type" => dirDesc ? q.OrderByDescending(r => r.Type).ThenBy(r => r.Number) : q.OrderBy(r => r.Type).ThenBy(r => r.Number),
-            "capacity" => dirDesc ? q.OrderByDescending(r => r.Capacity).ThenBy(r => r.Number) : q.OrderBy(r => r.Capacity).ThenBy(r => r.Number),
-            "price" or "pricepernight" => dirDesc ? q.OrderByDescending(r => r.PricePerNight).ThenBy(r => r.Number) : q.OrderBy(r => r.PricePerNight).ThenBy(r => r.Number),
-            _ => dirDesc ? q.OrderByDescending(r => r.Number) : q.OrderBy(r => r.Number)
+            "price" or "pricepernight" => dirDesc
+                ? allFilteredRooms.OrderByDescending(r => r.PricePerNight).ThenBy(r => r.Number)
+                : allFilteredRooms.OrderBy(r => r.PricePerNight).ThenBy(r => r.Number),
+            "type" => dirDesc
+                ? allFilteredRooms.OrderByDescending(r => r.Type).ThenBy(r => r.Number)
+                : allFilteredRooms.OrderBy(r => r.Type).ThenBy(r => r.Number),
+            "capacity" => dirDesc
+                ? allFilteredRooms.OrderByDescending(r => r.Capacity).ThenBy(r => r.Number)
+                : allFilteredRooms.OrderBy(r => r.Capacity).ThenBy(r => r.Number),
+            _ => dirDesc
+                ? allFilteredRooms.OrderByDescending(r => r.Number)
+                : allFilteredRooms.OrderBy(r => r.Number)
         };
 
-        var items = await q
+
+        var items = sorted
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(r => new RoomDto(r.Id, r.Number, r.Type, r.Capacity, r.PricePerNight, r.IsActive))
-            .ToListAsync(ct);
+            .ToList();
 
         return (items, total);
     }
